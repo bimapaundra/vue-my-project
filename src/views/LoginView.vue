@@ -8,6 +8,8 @@ import * as yup from 'yup'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { useToastGlobal } from '@/composables/useToastGlobal'
+import axios from 'axios'
+import { handleAxiosError } from '@/composables/useAxiosError'
 
 const mode = ref<'login' | 'register'>('login')
 
@@ -114,18 +116,52 @@ const registerForm: FormField[] = [
 ]
 
 const handleAuthSubmit = (btn: string) => {
-  handleSubmit(() => {
+  handleSubmit(async () => {
     if (mode.value === 'login' && btn === 'login') {
-      const success = auth.login(values.userId, values.password, values.remember)
-      if (success) {
-        showToast('Login berhasil!', 'success')
+      try {
+        const res = await axios.post('/api/login', {
+          userId: values.userId,
+          password: values.password,
+          remember: values.remember,
+        })
+
+        showToast(res.data.message || 'Login successful', 'success')
         router.push('/profile')
-      } else {
-        showToast('User ID and/or password does not match.', 'error')
+      } catch (err) {
+        showToast(handleAxiosError(err), 'error')
       }
     } else if (mode.value === 'register' && btn === 'register') {
-      showToast('Register berhasil!', 'success')
-      router.push('/profile')
+      try {
+        await axios.post('/api/register', {
+          userId: values.userId,
+          password: values.password,
+          profileImage: '',
+          salutation: '',
+          firstName: '',
+          lastName: '',
+          email: '',
+          homeAddress: '',
+          country: '',
+          postalCode: '',
+          dateOfBirth: '',
+          gender: '',
+          maritalStatus: false,
+          spouse: {
+            salutation: '',
+            firstName: '',
+            lastName: '',
+          },
+          hobbies: '',
+          favoriteSports: '',
+          preferredMusic: '',
+          preferredMovie: '',
+        })
+
+        showToast('Registration successful!', 'success')
+        router.push('/profile')
+      } catch (err) {
+        showToast(handleAxiosError(err), 'error')
+      }
     }
   })()
 }

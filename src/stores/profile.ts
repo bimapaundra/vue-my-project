@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 
 export interface userData {
+    userId: string,
+    password: string,
     profileImage: string,
     salutation: string,
     firstName: string,
@@ -46,6 +48,8 @@ export const useProfileStore = defineStore('profile', {
             favoriteSports: '',
             preferredMusic: '',
             preferredMovie: '',
+            userId: '',
+            password: ''
         },
     }),
 
@@ -76,6 +80,8 @@ export const useProfileStore = defineStore('profile', {
                 favoriteSports: '',
                 preferredMusic: '',
                 preferredMovie: '',
+                userId: '',
+                password: ''
             }
         },
     },

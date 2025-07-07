@@ -12,24 +12,6 @@ export const useAuthStore = defineStore('auth', {
     }),
 
     actions: {
-        login(userId: string, password: string, remember?: boolean) {
-            const envUser = import.meta.env.VITE_AUTH_USER
-            const envPass = import.meta.env.VITE_AUTH_PASS
-
-            if (userId === envUser && password === envPass) {
-                this.user = { userId }
-                this.isLogin = true
-
-                if (remember) {
-                    Cookies.set('auth_user', JSON.stringify(this.user), { expires: 365 })
-                }
-
-                return true
-            } else {
-                return false
-            }
-        },
-
         logout() {
             this.user = null
             this.isLogin = false

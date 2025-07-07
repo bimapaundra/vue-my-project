@@ -10,6 +10,7 @@ import App from './App.vue'
 import router from './router'
 import { useAuthStore } from './stores/auth'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+import './mocks/mock'
 
 const app = createApp(App)
 

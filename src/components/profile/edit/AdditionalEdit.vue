@@ -1,12 +1,15 @@
 <script setup lang="ts">
+import axios from 'axios'
 import BaseForm from '@/components/BaseForm.vue'
 import { useToastGlobal } from '@/composables/useToastGlobal'
 import { BUTTON_TYPES } from '@/constants'
-import { useProfileStore } from '@/stores/profile'
 import type { FormField } from '@/types/form'
 import { useForm } from 'vee-validate'
 import { computed, onMounted } from 'vue'
 import * as yup from 'yup'
+import { useAuthStore } from '@/stores/auth'
+import { useProfileStore } from '@/stores/profile'
+import { handleAxiosError } from '@/composables/useAxiosError'
 
 interface AdditionalFormValues {
   homeAddress: string
@@ -17,19 +20,9 @@ interface AdditionalFormValues {
   maritalStatus: string
 }
 
-const profile = useProfileStore()
+const auth = useAuthStore()
+const profileStore = useProfileStore()
 const { showToast } = useToastGlobal()
-
-onMounted(() => {
-  setValues({
-    homeAddress: profile.data.homeAddress,
-    country: profile.data.country,
-    postalCode: profile.data.postalCode,
-    dateOfBirth: profile.data.dateOfBirth,
-    gender: profile.data.gender,
-    maritalStatus: profile.data.maritalStatus ? 'Married' : 'Single',
-  })
-})
 
 const schema = computed(() => {
   return yup.object({
@@ -44,6 +37,36 @@ const schema = computed(() => {
 const { handleSubmit, meta, setValues } = useForm<AdditionalFormValues>({
   validationSchema: schema,
   validateOnMount: false,
+  initialValues: {
+    homeAddress: '',
+    country: '',
+    postalCode: '',
+    dateOfBirth: '',
+    gender: '',
+    maritalStatus: '',
+  },
+})
+
+onMounted(async () => {
+  if (!auth.user?.userId) return
+
+  try {
+    const res = await axios.get(`/api/profile/${auth.user.userId}`)
+    const user = res.data.profile
+
+    setValues({
+      homeAddress: user.homeAddress,
+      country: user.country,
+      postalCode: user.postalCode,
+      dateOfBirth: user.dateOfBirth,
+      gender: user.gender,
+      maritalStatus: user.maritalStatus ? 'Married' : 'Single',
+    })
+
+    profileStore.updateProfile(user)
+  } catch (err) {
+    showToast(handleAxiosError(err), 'error')
+  }
 })
 
 const additionalForm: FormField[] = [
@@ -75,14 +98,21 @@ const additionalForm: FormField[] = [
 ]
 
 const submit = (btn: string) => {
-  handleSubmit((formData) => {
-    if (btn === BUTTON_TYPES.saveButton) {
-      const updatedFormData = {
-        ...formData,
-        maritalStatus: formData.maritalStatus === 'Married' ? true : false,
+  handleSubmit(async (formData) => {
+    if (btn === BUTTON_TYPES.saveButton && auth.user?.userId) {
+      try {
+        const updatedData = {
+          ...formData,
+          maritalStatus: formData.maritalStatus === 'Married',
+        }
+
+        const res = await axios.patch(`/api/profile/${auth.user.userId}`, updatedData)
+        profileStore.updateProfile(res.data.profile)
+
+        showToast('Profile updated successfully!', 'success')
+      } catch (err) {
+        showToast(handleAxiosError(err), 'error')
       }
-      profile.updateProfile(updatedFormData)
-      showToast('Update profile berhasil!', 'success')
     }
   })()
 }

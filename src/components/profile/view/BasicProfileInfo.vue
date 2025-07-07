@@ -7,19 +7,19 @@
       <div class="space-y-2">
         <div>
           <label class="block font-semibold">Salutation</label>
-          <div>{{ profile.salutation || '-' }}</div>
+          <div>{{ profile?.salutation || '-' }}</div>
         </div>
         <div>
           <label class="block font-semibold">First name</label>
-          <div>{{ profile.firstName || '-' }}</div>
+          <div>{{ profile?.firstName || '-' }}</div>
         </div>
         <div>
           <label class="block font-semibold">Last name</label>
-          <div>{{ profile.lastName || '-' }}</div>
+          <div>{{ profile?.lastName || '-' }}</div>
         </div>
         <div>
           <label class="block font-semibold">Email address</label>
-          <div>{{ profile.email || '-' }}</div>
+          <div>{{ profile?.email || '-' }}</div>
         </div>
       </div>
     </div>
@@ -27,9 +27,25 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import type { userData } from '@/stores/profile'
+import { useAuthStore } from '@/stores/auth'
+import axios from 'axios'
+import { useToastGlobal } from '@/composables/useToastGlobal'
+import { handleAxiosError } from '@/composables/useAxiosError'
 
-defineProps<{
-  profile: userData
-}>()
+const auth = useAuthStore()
+const { showToast } = useToastGlobal()
+const profile = ref<userData | null>(null)
+
+onMounted(async () => {
+  if (!auth.user?.userId) return
+
+  try {
+    const res = await axios.get(`/api/profile/${auth.user.userId}`)
+    profile.value = res.data.profile
+  } catch (err) {
+    showToast(handleAxiosError(err), 'error')
+  }
+})
 </script>

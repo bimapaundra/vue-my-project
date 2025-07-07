@@ -1,12 +1,15 @@
 <script setup lang="ts">
+import axios from 'axios'
 import BaseForm from '@/components/BaseForm.vue'
 import { useToastGlobal } from '@/composables/useToastGlobal'
 import { BUTTON_TYPES } from '@/constants'
 import { useProfileStore } from '@/stores/profile'
+import { useAuthStore } from '@/stores/auth'
 import type { FormField } from '@/types/form'
 import { useForm } from 'vee-validate'
 import { computed, onMounted } from 'vue'
 import * as yup from 'yup'
+import { handleAxiosError } from '@/composables/useAxiosError'
 
 interface BasicProfileFormValues {
   salutation: string
@@ -16,16 +19,8 @@ interface BasicProfileFormValues {
 }
 
 const profile = useProfileStore()
+const auth = useAuthStore()
 const { showToast } = useToastGlobal()
-
-onMounted(() => {
-  setValues({
-    salutation: profile.data.salutation,
-    firstName: profile.data.firstName,
-    lastName: profile.data.lastName,
-    email: profile.data.email,
-  })
-})
 
 const schema = computed(() => {
   return yup.object({
@@ -45,6 +40,26 @@ const { handleSubmit, meta, setValues } = useForm<BasicProfileFormValues>({
     lastName: '',
     email: '',
   },
+})
+
+onMounted(async () => {
+  if (!auth.user?.userId) return
+
+  try {
+    const res = await axios.get(`/api/profile/${auth.user.userId}`)
+    const user = res.data.profile
+
+    setValues({
+      salutation: user.salutation,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    })
+
+    profile.updateProfile(user)
+  } catch (err) {
+    showToast(handleAxiosError(err), 'error')
+  }
 })
 
 const basicProfileForm: FormField[] = [
@@ -74,10 +89,16 @@ const basicProfileForm: FormField[] = [
 ]
 
 const submit = (btn: string) => {
-  handleSubmit((formData) => {
-    if (btn === BUTTON_TYPES.saveButton) {
-      profile.updateProfile(formData)
-      showToast('Update profile berhasil!', 'success')
+  handleSubmit(async (formData) => {
+    if (btn === BUTTON_TYPES.saveButton && auth.user?.userId) {
+      try {
+        const res = await axios.patch(`/api/profile/${auth.user.userId}`, formData)
+
+        profile.updateProfile(res.data.profile)
+        showToast('Profile updated successfully!', 'success')
+      } catch (err) {
+        showToast(handleAxiosError(err), 'error')
+      }
     }
   })()
 }

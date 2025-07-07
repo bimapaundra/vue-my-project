@@ -121,13 +121,13 @@ const togglePasswordVisibility = (name: string) => {
 const buttonClass = (type: string) => {
   switch (type) {
     case BUTTON_TYPES.loginButton:
-      return 'bg-black text-white px-10 py-2'
+      return 'bg-black text-white px-10 py-2 sm:py-1.5'
     case BUTTON_TYPES.saveButton:
-      return 'bg-gray-700 text-white px-10 py-2'
+      return 'bg-gray-700 text-white px-10 py-2 sm:py-1.5'
     case BUTTON_TYPES.cancelButton:
-      return 'bg-white text-black border px-10 py-2'
+      return 'bg-white text-black border px-10 py-2 sm:py-1.5'
     default:
-      return 'bg-gray-400 text-white px-10 py-2'
+      return 'bg-gray-400 text-white px-10 py-2 sm:py-1.5'
   }
 }
 </script>
